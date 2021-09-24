@@ -29,6 +29,7 @@ contract LikeUSDClaimable {
 
         claimers[msg.sender] = true;
         IERC1155Collectible(token).mint(msg.sender, tokenId, reward, "");
+        rewardsPaid += reward;
         emit Claimed(msg.sender);
     }
 }
