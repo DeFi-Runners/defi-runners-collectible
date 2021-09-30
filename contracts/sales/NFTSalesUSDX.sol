@@ -5,33 +5,33 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "./interfaces/IERC1155Collectible.sol";
-import "./Partners.sol";
+import "../interfaces/IERC1155Collectible.sol";
+import "../interfaces/IPartner.sol";
 
-contract DeFiRunnersNFTSales is ERC721Holder, Ownable, Partners {
+// @title NFTSalesUSDX - NFT sale by stablecoins one type
+contract NFTSalesUSDX is ERC1155Holder, Ownable {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     struct Token {
-        bool stablecoin;
         bool resolved;
-        uint256 price; // todo в чем? in usd decimal 10^8
+        uint256 price; // todo in what? in usd decimal 10^8
     }
 
     struct Collectible {
-        uint256 price; // in usd // todo покупку делать за эту цену 10^8
+        uint256 price; // in usd // todo to buy in this price multiplied 10^8
     }
 
-    IERC1155Collectible public collection;
-    address public vesting;
+    IERC1155Collectible public immutable collection;
+    address public immutable vesting;
+    address public immutable refRegistry;
 
     bool public salesEnabled;
 
     // @dev collections - list of resolved for sell stablecoins
-
     mapping(address => Token) public tokenInfo;
     // token id -> data
     mapping(uint256 => Collectible) public collectibleInfo;
@@ -40,9 +40,39 @@ contract DeFiRunnersNFTSales is ERC721Holder, Ownable, Partners {
     event Deposited(address token, address from, uint256 amount);
 
     // `_collectionToken` - erc1155 token
-    constructor(IERC1155Collectible _collectionToken, address _vesting) {
+    constructor(IERC1155Collectible _collectionToken, address _vesting, address _refRegistry) {
+        require(
+            address(_collectionToken) != address(0) &&
+            address(_vesting) != address(0) &&
+            address(_refRegistry) != address(0),
+            "Token sell: wrong constructor arguments"
+        );
+
         collection = _collectionToken;
         vesting = _vesting;
+        refRegistry = _refRegistry;
+
+        Token storage usdt = tokenInfo[0x55d398326f99059fF775485246999027B3197955];
+        usdt.resolved = true;
+        usdt.price = 1e18;
+
+        Token storage busd = tokenInfo[0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56];
+        busd.resolved = true;
+        busd.price = 1e18;
+
+        Token storage usdc = tokenInfo[0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d];
+        usdc.resolved = true;
+        usdc.price = 1e18;
+
+        Token storage dai = tokenInfo[0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3];
+        dai.resolved = true;
+        dai.price = 1e18;
+
+        collectibleInfo[1].price = 1e18;
+        collectibleInfo[2].price = 769e14;
+        collectibleInfo[3].price = 336e13;
+        collectibleInfo[4].price = 541e12;
+        collectibleInfo[5].price = 2086e10;
     }
 
     function buy(
@@ -66,43 +96,12 @@ contract DeFiRunnersNFTSales is ERC721Holder, Ownable, Partners {
             "Token sell: token is not accepted"
         );
         
-        if (!isUser(msg.sender)) {
-            _register(msg.sender, _sponsor);
+        if (!IPartner(refRegistry).isUser(msg.sender)) {
+            IPartner(refRegistry).register(msg.sender, _sponsor);
         }
 
         if (_token != address(0)) {
             _buy(_token, _amount, _tokenId, _items, _to);
-        } else {
-            _buyETH(_token, _amount, _tokenId, _items, _to);
-        }
-    }
-
-    function setToken(
-        address _token,
-        uint256 _price,
-        bool _stablecoin,
-        bool _resolved
-    )
-        external
-        onlyOwner
-    {
-        if (!(_stablecoin && _resolved)) {
-            delete tokenInfo[_token];
-        } else {
-            if (_resolved) {
-                require(!tokenInfo[_token].resolved, "Token sell: token resolved");
-            }
-
-            if (!_stablecoin) {
-                require(_price != 0, "Token sell: zero token price");
-
-                tokenInfo[_token].price = _price;
-            } else {
-                tokenInfo[_token].price = 1e8; // 10^8
-            }
-
-            tokenInfo[_token].stablecoin = _stablecoin;
-            tokenInfo[_token].resolved = _resolved;
         }
     }
 
@@ -110,7 +109,7 @@ contract DeFiRunnersNFTSales is ERC721Holder, Ownable, Partners {
         salesEnabled = _status;
     }
 
-    function countBuyAmount(address _account, address buyToken, uint _tokenId, uint _amount)
+    function countBuyAmount(address _buyToken, uint _tokenId, uint _amount)
         external
         view
         returns (uint price)
@@ -120,29 +119,11 @@ contract DeFiRunnersNFTSales is ERC721Holder, Ownable, Partners {
             "Token sell: zero items, really?"
         );
         require(
-            tokenInfo[buyToken].resolved,
+            tokenInfo[_buyToken].resolved,
             "Token sell: token is not accepted"
         );
 
-        price = _amount.mul(collectibleInfo[_tokenId].price);
-    }
-
-    function _buyETH(
-        address _token,
-        uint256 _amount,
-        uint256 _tokenId,
-        uint256 _items,
-        address _to
-    ) internal {
-        uint256 price = _items.mul(collectibleInfo[_tokenId].price);
-
-        require(_amount >= price, "Token sell: not enough to buy, low amount");
-        require(msg.value == _amount, "Token sell: not enough ether for buy");
-
-        Address.sendValue(payable(vesting), _amount);
-        collection.mint(_to, _tokenId, _items, "");
-        emit Deposited(_token, msg.sender, _amount);
-        emit Bought(_token, _to, _tokenId, _items);
+        price = _amount.mul(collectibleInfo[_tokenId].price.mul(tokenInfo[_buyToken].price).div(1e18));
     }
 
     function _buy(
@@ -154,7 +135,7 @@ contract DeFiRunnersNFTSales is ERC721Holder, Ownable, Partners {
     ) internal {
         require(msg.value == 0, "Ether value not zero");
 
-        uint256 price = _items.mul(collectibleInfo[_tokenId].price);
+        uint256 price = _items.mul(collectibleInfo[_tokenId].price.mul(tokenInfo[_token].price).div(1e18));
 
         require(_amount >= price, "Token sell: not enough to buy, low amount");
 
