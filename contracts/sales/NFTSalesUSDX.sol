@@ -31,6 +31,8 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
 
     bool public salesEnabled;
 
+    uint256 public minBuy = 1e18;
+
     // @dev collections - list of resolved for sell stablecoins
     mapping(address => Token) public tokenInfo;
     // token id -> data
@@ -87,6 +89,8 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
         payable
         isSellApproved
     {
+        require(_token != address(0), "Token sell: zero token");
+        require(_to != address(0), "Token sell: buy for vitalik?");
         require(
             _items > 0,
             "Token sell: zero items, really?"
@@ -95,14 +99,16 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
             tokenInfo[_token].resolved,
             "Token sell: token is not accepted"
         );
-        
+
         if (!IPartner(refRegistry).isUser(msg.sender)) {
-            IPartner(refRegistry).register(msg.sender, _sponsor);
+            if (_sponsor == address(0)) {
+                IPartner(refRegistry).register(msg.sender, owner());
+            } else {
+                IPartner(refRegistry).register(msg.sender, _sponsor);
+            }
         }
 
-        if (_token != address(0)) {
-            _buy(_token, _amount, _tokenId, _items, _to);
-        }
+        _buy(_token, _amount, _tokenId, _items, _to);
     }
 
     function sellSwitcher(bool _status) external onlyOwner {
@@ -126,6 +132,10 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
         price = _amount.mul(collectibleInfo[_tokenId].price.mul(tokenInfo[_buyToken].price).div(1e18));
     }
 
+    function setMinBuy(uint256 _minBuy) external onlyOwner {
+        minBuy = _minBuy;
+    }
+
     function _buy(
         address _token,
         uint256 _amount,
@@ -137,6 +147,7 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
 
         uint256 price = _items.mul(collectibleInfo[_tokenId].price.mul(tokenInfo[_token].price).div(1e18));
 
+        require(_amount >= minBuy, "Token sell: min buy, not enough to buy");
         require(_amount >= price, "Token sell: not enough to buy, low amount");
 
         IERC20(_token).safeTransferFrom(_msgSender(), vesting, _amount);
