@@ -18,11 +18,11 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
 
     struct Token {
         bool resolved;
-        uint256 price; // todo in what? in usd decimal 10^8
+        uint256 price;
     }
 
     struct Collectible {
-        uint256 price; // in usd // todo to buy in this price multiplied 10^8
+        uint256 price; // in usd
     }
 
     IERC1155Collectible public immutable collection;
@@ -101,11 +101,7 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
         );
 
         if (!IPartner(refRegistry).isUser(msg.sender)) {
-            if (_sponsor == address(0)) {
-                IPartner(refRegistry).register(msg.sender, owner());
-            } else {
-                IPartner(refRegistry).register(msg.sender, _sponsor);
-            }
+            IPartner(refRegistry).register(msg.sender, _sponsor);
         }
 
         _buy(_token, _amount, _tokenId, _items, _to);
