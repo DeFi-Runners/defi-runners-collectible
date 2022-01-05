@@ -6,18 +6,32 @@ import "./interfaces/IPartner.sol";
 import "./PartnersManageable.sol";
 
 contract Partners is IPartner, PartnersManageable {
+    mapping(address => address) private _affiliates;
+    mapping(address => address[]) private _referrals;
+    mapping(address => bool) private _registered;
 
-    mapping (address => address) private _affiliates;
-    mapping (address => address[]) private _referrals;
-    mapping (address => bool) private _registered;
+    event UserRegistered(
+        address indexed account,
+        uint256 amount,
+        address affiliate
+    );
 
-    event UserRegistered(address indexed account, uint256 amount, address affiliate);
-
-    function register(address _sender, address _affiliate) external virtual override onlyManager {
+    function register(address _sender, address _affiliate)
+        external
+        virtual
+        override
+        onlyManager
+    {
         _register(_sender, _affiliate);
     }
 
-    function isUser(address _account) public view virtual override returns (bool) {
+    function isUser(address _account)
+        public
+        view
+        virtual
+        override
+        returns (bool)
+    {
         return _registered[_account];
     }
 
@@ -25,7 +39,11 @@ contract Partners is IPartner, PartnersManageable {
         return _affiliates[_account];
     }
 
-    function getReferrals(address _account) external view returns (address[] memory refs) {
+    function getReferrals(address _account)
+        external
+        view
+        returns (address[] memory refs)
+    {
         refs = _referrals[_account];
     }
 

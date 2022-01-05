@@ -5,7 +5,6 @@ pragma solidity ^0.8.4;
 import "./interfaces/IERC1155Collectible.sol";
 
 contract LikeUSDClaimable {
-
     uint256 public constant reward = 10;
     uint256 public constant rewardLimit = 100_000;
 
@@ -14,7 +13,7 @@ contract LikeUSDClaimable {
     address public immutable token;
     uint256 public immutable tokenId;
 
-    mapping (address => bool) public claimers;
+    mapping(address => bool) public claimers;
 
     event Claimed(address indexed account);
 

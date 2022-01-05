@@ -6,9 +6,8 @@ import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
 import "./RoyaltyToken.sol";
 
 contract ERC1155Collectible is ERC1155Supply, RoyaltyToken {
-
-    mapping (address => bool) public minters;
-    mapping (uint => uint) public tokensLimit;
+    mapping(address => bool) public minters;
+    mapping(uint256 => uint256) public tokensLimit;
 
     event MinterRoleGranted(address);
     event MinterRoleRevoked(address);
@@ -21,7 +20,12 @@ contract ERC1155Collectible is ERC1155Supply, RoyaltyToken {
         tokensLimit[5] = 100_000_000_000;
     }
 
-    function mint(address _to, uint256 _id, uint256 _amount, bytes memory _data) public virtual {
+    function mint(
+        address _to,
+        uint256 _id,
+        uint256 _amount,
+        bytes memory _data
+    ) public virtual {
         require(minters[msg.sender], "No permission Minter");
 
         _mint(_to, _id, _amount, _data);
@@ -29,7 +33,11 @@ contract ERC1155Collectible is ERC1155Supply, RoyaltyToken {
         require(totalSupply(_id) <= tokensLimit[_id], "Limit overflow");
     }
 
-    function burn(address _to, uint256 _id, uint256 _amount) public virtual {
+    function burn(
+        address _to,
+        uint256 _id,
+        uint256 _amount
+    ) public virtual {
         require(minters[msg.sender], "No permission Minter");
 
         _burn(_to, _id, _amount);

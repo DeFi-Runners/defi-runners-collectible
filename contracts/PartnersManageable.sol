@@ -5,8 +5,7 @@ pragma solidity >=0.5.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract PartnersManageable is Ownable {
-
-    mapping (address => bool) public managers;
+    mapping(address => bool) public managers;
 
     event ManagerSet(address, bool);
 

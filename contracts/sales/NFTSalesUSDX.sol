@@ -42,7 +42,11 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
     event Deposited(address token, address from, uint256 amount);
 
     // `_collectionToken` - erc1155 token
-    constructor(IERC1155Collectible _collectionToken, address _vesting, address _refRegistry) {
+    constructor(
+        IERC1155Collectible _collectionToken,
+        address _vesting,
+        address _refRegistry
+    ) {
         require(
             address(_collectionToken) != address(0) &&
             address(_vesting) != address(0) &&
@@ -54,19 +58,27 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
         vesting = _vesting;
         refRegistry = _refRegistry;
 
-        Token storage usdt = tokenInfo[0x55d398326f99059fF775485246999027B3197955];
+        Token storage usdt = tokenInfo[
+            0x55d398326f99059fF775485246999027B3197955
+        ];
         usdt.resolved = true;
         usdt.price = 1e18;
 
-        Token storage busd = tokenInfo[0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56];
+        Token storage busd = tokenInfo[
+            0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56
+        ];
         busd.resolved = true;
         busd.price = 1e18;
 
-        Token storage usdc = tokenInfo[0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d];
+        Token storage usdc = tokenInfo[
+            0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d
+        ];
         usdc.resolved = true;
         usdc.price = 1e18;
 
-        Token storage dai = tokenInfo[0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3];
+        Token storage dai = tokenInfo[
+            0x1AF3F329e8BE154074D8769D1FFa4eE058B1DBc3
+        ];
         dai.resolved = true;
         dai.price = 1e18;
 
@@ -84,17 +96,10 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
         uint256 _items,
         address _to,
         address _sponsor
-    )
-        external
-        payable
-        isSellApproved
-    {
+    ) external payable isSellApproved {
         require(_token != address(0), "Token sell: zero token");
         require(_to != address(0), "Token sell: buy for vitalik?");
-        require(
-            _items > 0,
-            "Token sell: zero items, really?"
-        );
+        require(_items > 0, "Token sell: zero items, really?");
         require(
             tokenInfo[_token].resolved,
             "Token sell: token is not accepted"
@@ -111,21 +116,22 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
         salesEnabled = _status;
     }
 
-    function countBuyAmount(address _buyToken, uint _tokenId, uint _amount)
-        external
-        view
-        returns (uint price)
-    {
-        require(
-            _amount > 0,
-            "Token sell: zero items, really?"
-        );
+    function countBuyAmount(
+        address _buyToken,
+        uint256 _tokenId,
+        uint256 _amount
+    ) external view returns (uint256 price) {
+        require(_amount > 0, "Token sell: zero items, really?");
         require(
             tokenInfo[_buyToken].resolved,
             "Token sell: token is not accepted"
         );
 
-        price = _amount.mul(collectibleInfo[_tokenId].price.mul(tokenInfo[_buyToken].price).div(1e18));
+        price = _amount.mul(
+            collectibleInfo[_tokenId].price.mul(tokenInfo[_buyToken].price).div(
+                1e18
+            )
+        );
     }
 
     function setMinBuy(uint256 _minBuy) external onlyOwner {
@@ -141,7 +147,11 @@ contract NFTSalesUSDX is ERC1155Holder, Ownable {
     ) internal {
         require(msg.value == 0, "Ether value not zero");
 
-        uint256 price = _items.mul(collectibleInfo[_tokenId].price.mul(tokenInfo[_token].price).div(1e18));
+        uint256 price = _items.mul(
+            collectibleInfo[_tokenId].price.mul(tokenInfo[_token].price).div(
+                1e18
+            )
+        );
 
         require(_amount >= minBuy, "Token sell: min buy, not enough to buy");
         require(_amount >= price, "Token sell: not enough to buy, low amount");

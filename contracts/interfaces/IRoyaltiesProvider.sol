@@ -6,7 +6,14 @@ pragma abicoder v2;
 import "../libs/LibPart.sol";
 
 interface IRoyaltiesProvider {
-    function getRoyalties(uint tokenId) external returns (LibPart.Part[] memory);
-    function getFeeRecipients(uint256 id) external view returns (address payable[] memory);
-    function getFeeBps(uint256 id) external view returns (uint[] memory);
+    function getRoyalties(uint256 tokenId)
+        external
+        returns (LibPart.Part[] memory);
+
+    function getFeeRecipients(uint256 id)
+        external
+        view
+        returns (address payable[] memory);
+
+    function getFeeBps(uint256 id) external view returns (uint256[] memory);
 }

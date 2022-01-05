@@ -5,8 +5,7 @@ import { SafeMath } from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
 // @title WelcomeToken
-contract WelcomeToken is  ERC721Enumerable, Ownable {
-
+contract WelcomeToken is ERC721Enumerable, Ownable {
     string public message;
 
     constructor(string memory _message)
@@ -16,8 +15,8 @@ contract WelcomeToken is  ERC721Enumerable, Ownable {
     }
 
     function drop(address[] memory _accounts) external onlyOwner {
-        uint numberOfTokens = _accounts.length;
-        for (uint i; i < numberOfTokens; i++) {
+        uint256 numberOfTokens = _accounts.length;
+        for (uint256 i; i < numberOfTokens; i++) {
             _safeMint(_msgSender(), totalSupply());
         }
     }

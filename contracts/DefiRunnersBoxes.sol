@@ -9,7 +9,6 @@ import { Address, ERC1155, ERC1155Supply } from "@openzeppelin/contracts/token/E
  * @title DefiRunnersBoxes
  */
 contract DefiRunnersBoxes is ERC1155Supply, Ownable {
-
     string public name;
     string public symbol;
 
@@ -17,9 +16,7 @@ contract DefiRunnersBoxes is ERC1155Supply, Ownable {
         string memory _uri,
         string memory _name,
         string memory _symbol
-    )
-        ERC1155(_uri)
-    {
+    ) ERC1155(_uri) {
         name = _name;
         symbol = _symbol;
     }

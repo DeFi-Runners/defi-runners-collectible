@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 
 // ERC1155 prices sales contract
 contract NFTBoxSales is ERC1155Holder, Ownable {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     enum SalesStatus {
         DISABLED,
@@ -29,7 +29,7 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
     uint256[MAX_BOXES] public prices;
 
     event StatusSet(SalesStatus status);
-    event PurchaseSet(uint amount);
+    event PurchaseSet(uint256 amount);
     event BasicCollectionSet(address nft);
     event FundSet(address fund);
 
@@ -37,14 +37,10 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
         IERC1155 _nft,
         uint256[MAX_BOXES] memory _prices,
         address payable _fund
-    )
-    {
-        require(
-            address(_nft) != address(0),
-            "Unacceptable address set"
-        );
+    ) {
+        require(address(_nft) != address(0), "Unacceptable address set");
 
-        for (uint i; i < MAX_BOXES; i++) {
+        for (uint256 i; i < MAX_BOXES; i++) {
             prices[i] = _prices[i];
         }
 
@@ -62,7 +58,7 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
         _buy(msg.value / prices[boxId], boxId, msg.value);
     }
 
-    function buy(uint _amount, uint _boxId)
+    function buy(uint256 _amount, uint256 _boxId)
         external
         payable
         isSalesActive
@@ -70,7 +66,11 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
         _buy(_amount, _boxId, msg.value);
     }
 
-    function _buy(uint _amount, uint _boxId, uint256 _deposit) internal {
+    function _buy(
+        uint256 _amount,
+        uint256 _boxId,
+        uint256 _deposit
+    ) internal {
         require(_boxId < MAX_BOXES, "Market: box id not exist");
         require(
             _amount != 0 && _amount <= maxTokenPurchase,
@@ -84,7 +84,7 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
 
         Address.sendValue(fund, _deposit);
 
-        nft.safeTransferFrom(address(this), msg.sender, _boxId, _amount,"");
+        nft.safeTransferFrom(address(this), msg.sender, _boxId, _amount, "");
     }
 
     function statusSwitcher() external onlyOwner {
@@ -111,8 +111,7 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
 
     function setFund(address payable _newFund) external onlyOwner {
         require(
-            _newFund != address(0) &&
-            _newFund != address(this),
+            _newFund != address(0) && _newFund != address(this),
             "Zero address set"
         );
 
@@ -125,18 +124,18 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
         address _to,
         uint256[] calldata _tokenIds,
         uint256[] calldata _amounts
-    )
-        external
-        onlyOwner
-    {
-        _token.safeBatchTransferFrom(address(this), _to, _tokenIds, _amounts, "");
+    ) external onlyOwner {
+        _token.safeBatchTransferFrom(
+            address(this),
+            _to,
+            _tokenIds,
+            _amounts,
+            ""
+        );
     }
 
     modifier isSalesActive() {
-        require(
-            SalesStatus.ENABLED == status,
-            "Market: sale is not active"
-        );
+        require(SalesStatus.ENABLED == status, "Market: sale is not active");
         _;
     }
 }

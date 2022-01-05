@@ -81,16 +81,9 @@ contract NFTSalesBNB is ERC1155Holder, Ownable {
         uint256 _items,
         address _to,
         address _sponsor
-    )
-        external
-        payable
-        isSellApproved
-    {
+    ) external payable isSellApproved {
         require(_to != address(0), "Token sell: buy for vitalik?");
-        require(
-            _items > 0,
-            "Token sell: zero items, really?"
-        );
+        require(_items > 0, "Token sell: zero items, really?");
         require(
             tokenInfo[address(0)].resolved,
             "Token sell: token is not accepted"
@@ -119,11 +112,15 @@ contract NFTSalesBNB is ERC1155Holder, Ownable {
         tokenInfo[address(0)].priceOracle = _priceOracle;
     }
 
-    function countBuyAmount(address _token, uint256 _tokenId, uint _items) public view returns (uint amountOut) {
+    function countBuyAmount(
+        address _token,
+        uint256 _tokenId,
+        uint256 _items
+    ) public view returns (uint256 amountOut) {
         IUniV2PriceOracle priceOracle = tokenInfo[_token].priceOracle;
         address token0 = priceOracle.token0();
         address token1 = priceOracle.token1();
-        uint amountIn = _items.mul(collectibleInfo[_tokenId].price);
+        uint256 amountIn = _items.mul(collectibleInfo[_tokenId].price);
         if (token0 == baseStablecoin) {
             amountOut = priceOracle.consult(token0, amountIn);
         } else {
@@ -140,14 +137,22 @@ contract NFTSalesBNB is ERC1155Holder, Ownable {
     ) internal {
         uint256 minAmount = countBuyAmount(_token, _tokenId, _items);
 
-        IUniV2PriceOracle priceOracle = IUniV2PriceOracle(tokenInfo[_token].priceOracle);
+        IUniV2PriceOracle priceOracle = IUniV2PriceOracle(
+            tokenInfo[_token].priceOracle
+        );
         // update price
-        if (priceOracle.blockTimestampLast() + priceOracle.PERIOD() >= block.timestamp) {
+        if (
+            priceOracle.blockTimestampLast() + priceOracle.PERIOD() >=
+            block.timestamp
+        ) {
             priceOracle.update();
         }
 
         require(minAmount != 0, "Token sell: zero min amount");
-        require(_amount >= minAmount, "Token sell: not enough to buy, low amount");
+        require(
+            _amount >= minAmount,
+            "Token sell: not enough to buy, low amount"
+        );
         require(msg.value == _amount, "Token sell: not enough ether for buy");
 
         Address.sendValue(payable(vesting), _amount);
