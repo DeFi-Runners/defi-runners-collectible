@@ -7,9 +7,10 @@ import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "../SendValueWithFallbackWithdraw.sol";
 
 // ERC1155 prices sales contract
-contract NFTBoxSales is ERC1155Holder, Ownable {
+contract NFTBoxSales is ERC1155Holder, Ownable, SendValueWithFallbackWithdraw {
     using SafeMath for uint256;
 
     enum SalesStatus {
@@ -53,23 +54,27 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
         emit FundSet(_fund);
     }
 
-    receive() external payable isSalesActive {
+    receive() external payable isSalesActive nonReentrant {
         uint256 boxId = 2;
-        _buy(msg.value / prices[boxId], boxId, msg.value);
+        _buy(msg.value / prices[boxId], boxId, msg.value, fund);
     }
 
-    function buy(uint256 _amount, uint256 _boxId)
+    function buy(uint256 _amount, uint256 _boxId, address payable _partner)
         external
         payable
         isSalesActive
+        nonReentrant
     {
-        _buy(_amount, _boxId, msg.value);
+        require(_partner != address(0), "Zero partner address set");
+
+        _buy(_amount, _boxId, msg.value, _partner);
     }
 
     function _buy(
         uint256 _amount,
         uint256 _boxId,
-        uint256 _deposit
+        uint256 _deposit,
+        address payable _partner
     ) internal {
         require(_boxId < MAX_BOXES, "Market: box id not exist");
         require(
@@ -82,7 +87,10 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
             "Market: ether value sent is not correct"
         );
 
-        Address.sendValue(fund, _deposit);
+        uint256 serviceFee = _deposit * 95 / 100;
+        Address.sendValue(fund, serviceFee);
+        uint256 partnerFee = _deposit - serviceFee;
+        Address.sendValue(_partner, partnerFee);
 
         nft.safeTransferFrom(address(this), msg.sender, _boxId, _amount, "");
     }
@@ -119,7 +127,7 @@ contract NFTBoxSales is ERC1155Holder, Ownable {
         emit FundSet(_newFund);
     }
 
-    function withdraw(
+    function withdrawNFTs(
         IERC1155 _token,
         address _to,
         uint256[] calldata _tokenIds,
