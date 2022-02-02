@@ -105,6 +105,8 @@ contract DeFiRunnersBoxMarket is
         isValidMerkleProof(_merkleProof, whitelistMerkleRoot)
         nonReentrant
     {
+        require(_boxId == 0, "Only small boxes");
+
         claimed[msg.sender] = true;
         _handlePartnersSale(_partner, _amount);
         _buy(msg.sender, _boxId, _amount, msg.value);
