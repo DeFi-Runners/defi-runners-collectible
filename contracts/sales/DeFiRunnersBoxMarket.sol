@@ -87,7 +87,7 @@ contract DeFiRunnersBoxMarket is
         nonReentrant
     {
         _handlePartnersSale(_partner, _amount);
-        _buy(msg.sender, _amount, _boxId, msg.value);
+        _buy(msg.sender, _boxId, _amount, msg.value);
     }
 
     function mintPresale(
@@ -159,7 +159,7 @@ contract DeFiRunnersBoxMarket is
         );
 
         Address.sendValue(fund, _deposit);
-        IERC1155Collectible(nft).mint(_buyer, _tokenId, _amount, "0x");
+        IERC1155(nft).safeTransferFrom(address(this), _buyer, _tokenId, _amount, "0x");
     }
 
     modifier isCorrectAmount(uint256 _amount) {
