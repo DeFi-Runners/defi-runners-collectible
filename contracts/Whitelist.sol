@@ -16,6 +16,18 @@ abstract contract Whitelist is Ownable {
         whitelistMerkleRoot = merkleRoot;
     }
 
+    function getHash(address _account) external pure returns (bytes32 result) {
+        result = keccak256(abi.encodePacked(_account));
+    }
+
+    function checkValidMerkleProof(bytes32[] calldata merkleProof, bytes32 root, address _account) external pure returns (bool result) {
+        result = MerkleProof.verify(
+            merkleProof,
+            root,
+            keccak256(abi.encodePacked(_account))
+        );
+    }
+
     /**
      * @dev validates merkleProof
      */

@@ -3,11 +3,13 @@ import chai from "chai";
 import { ethers } from "hardhat";
 import { BigNumber, Signer } from "ethers";
 import { solidity } from "ethereum-waffle";
+import {MerkleTree} from "merkletreejs";
+import keccak256 from "keccak256";
 
 chai.use(solidity);
 
-const { assert, expect } = chai;
-const { MaxUint256, AddressZero } = ethers.constants;
+const { assert } = chai;
+const { AddressZero } = ethers.constants;
 
 describe("BoxMarket", function () {
     let accounts: Signer[];
@@ -15,10 +17,14 @@ describe("BoxMarket", function () {
     let OWNER_SIGNER: any;
     let DEV_SIGNER: any;
     let ALICE_SIGNER: any;
+    let BOB_SIGNER: any;
+    let DAVE_SIGNER: any;
 
     let OWNER: any;
     let DEV: any;
     let ALICE: any;
+    let BOB: any;
+    let DAVE: any;
 
     let boxes: any;
     let market: any;
@@ -29,10 +35,14 @@ describe("BoxMarket", function () {
         OWNER_SIGNER = accounts[0];
         DEV_SIGNER = accounts[1];
         ALICE_SIGNER = accounts[2];
+        BOB_SIGNER = accounts[3];
+        DAVE_SIGNER = accounts[4];
 
         OWNER = await OWNER_SIGNER.getAddress();
         DEV = await DEV_SIGNER.getAddress();
         ALICE = await ALICE_SIGNER.getAddress();
+        BOB = await BOB_SIGNER.getAddress();
+        DAVE = await DAVE_SIGNER.getAddress();
 
         const DefiRunnersBoxes = await ethers.getContractFactory("DefiRunnersBoxes");
         const DeFiRunnersBoxMarket = await ethers.getContractFactory("DeFiRunnersBoxMarket");
@@ -53,15 +63,9 @@ describe("BoxMarket", function () {
             )
 
             let priceBoxId0 = await market.prices(0)
-
-            console.log(priceBoxId0.toString())
-
             let boxId = 0
             let amount = 1
-
             let deposit = amount * priceBoxId0
-
-            console.log(deposit.toString())
 
             await market.connect(ALICE_SIGNER).mint(
                 boxId,
@@ -70,16 +74,13 @@ describe("BoxMarket", function () {
                 { value: amount * priceBoxId0 }
             )
 
-            console.log(await market.raisedBalances(DEV))
-            console.log(await market.inviteBy(ALICE))
-
             assert.equal(await boxes.balanceOf(ALICE, 0), 1)
 
             await market.connect(ALICE_SIGNER).mint(
                 boxId,
                 amount,
                 AddressZero,
-                { value: amount * priceBoxId0 }
+                { value: deposit }
             )
 
             assert.equal(await boxes.balanceOf(ALICE, 0), 2)
@@ -87,6 +88,48 @@ describe("BoxMarket", function () {
             await market.withdrawNFTs(boxes.address, DEV, [0], [1])
 
             assert.equal(await boxes.balanceOf(DEV, 0), 1)
+        })
+
+        it('#mintPresale', async () => {
+            await market.setStatus(1)
+            await boxes.mintBatch(
+                market.address,
+                [0],
+                [3],
+                "0x"
+            )
+
+            let priceBoxId0 = await market.prices(0)
+
+            const wl = [ALICE, BOB]
+            const leaves = wl.map((x: string) => keccak256(x))
+            const tree = new MerkleTree(leaves, keccak256, { sortPairs: true })
+            const root = tree.getRoot().toString('hex')
+            const leaf = Buffer.from(keccak256(wl[0]))
+            const proof = tree.getProof(leaf)
+
+            assert.equal(
+                `0x${Buffer.from(keccak256(ALICE)).toString('hex')}`,
+                await market.getHash(ALICE),
+                'bed hash encode'
+            )
+            assert.equal(tree.verify(proof, leaf, root), true, 'Proof not accepted') // true
+
+            let boxId = 0
+            let amount = 1
+            let deposit = amount * priceBoxId0
+
+            await market.setWhitelistMerkleRoot(`0x${root}`)
+
+            assert.equal(await market.checkValidMerkleProof(tree.getLeaves(), await market.whitelistMerkleRoot(), ALICE), true,'Presale no access')
+
+            await market.connect(ALICE_SIGNER).mintPresale(
+                boxId,
+                amount,
+                DEV,
+                tree.getLeaves(),
+                { value: deposit }
+            )
         })
     })
 
