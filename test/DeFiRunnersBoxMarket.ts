@@ -102,32 +102,17 @@ describe("BoxMarket", function () {
             let priceBoxId0 = await market.prices(0)
 
             const wl = [ALICE, BOB]
-            const leaves = wl.map((x: string) => keccak256(x))
-            const tree = new MerkleTree(leaves, keccak256, { sortPairs: true })
-            const root = tree.getRoot().toString('hex')
-            const leaf = Buffer.from(keccak256(wl[0]))
-            const proof = tree.getProof(leaf)
 
-            assert.equal(
-                `0x${Buffer.from(keccak256(ALICE)).toString('hex')}`,
-                await market.getHash(ALICE),
-                'bed hash encode'
-            )
-            assert.equal(tree.verify(proof, leaf, root), true, 'Proof not accepted') // true
+            await market.addMembers(wl)
 
             let boxId = 0
             let amount = 1
             let deposit = amount * priceBoxId0
 
-            await market.setWhitelistMerkleRoot(`0x${root}`)
-
-            assert.equal(await market.checkValidMerkleProof(tree.getLeaves(), await market.whitelistMerkleRoot(), ALICE), true,'Presale no access')
-
             await market.connect(ALICE_SIGNER).mintPresale(
                 boxId,
                 amount,
                 DEV,
-                tree.getLeaves(),
                 { value: deposit }
             )
         })

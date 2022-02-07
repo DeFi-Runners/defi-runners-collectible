@@ -93,8 +93,7 @@ contract DeFiRunnersBoxMarket is
     function mintPresale(
         uint256 _boxId,
         uint256 _amount,
-        address _partner,
-        bytes32[] calldata _merkleProof
+        address _partner
     )
         external
         payable
@@ -102,7 +101,7 @@ contract DeFiRunnersBoxMarket is
         isCorrectTokenId(_boxId)
         isCorrectAmount(_amount)
         isNotClaimed
-        isValidMerkleProof(_merkleProof, whitelistMerkleRoot)
+        onlyMember
         nonReentrant
     {
         require(_boxId == 0, "Only small boxes");
