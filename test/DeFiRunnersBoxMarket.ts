@@ -3,8 +3,6 @@ import chai from "chai";
 import { ethers } from "hardhat";
 import { BigNumber, Signer } from "ethers";
 import { solidity } from "ethereum-waffle";
-import {MerkleTree} from "merkletreejs";
-import keccak256 from "keccak256";
 
 chai.use(solidity);
 
